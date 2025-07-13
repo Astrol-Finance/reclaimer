@@ -246,6 +246,7 @@
         // Token program IDs
         const TOKEN_PROGRAM_ID = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA';
         const TOKEN_2022_PROGRAM_ID = 'TokenzQdB6q6r1hB1zjUjLkQ2bYwF4g9F5uQh8eH1J1';
+        const NATIVE_MINT = 'So11111111111111111111111111111111111111112';
 
         // Initialize the application
         async function init() {
@@ -333,15 +334,20 @@
                 } catch (e) {
                     // ignore if not supported
                 }
-                // Filter for non-canonical accounts (accounts with 0 balance or dust)
+                // Filter for non-canonical accounts (accounts with 0 balance or dust, or any balance if native mint)
                 accounts = [];
                 for (const account of (tokenAccounts.value || [])) {
                     const accountInfo = account.account.data.parsed.info;
                     const balance = accountInfo.tokenAmount.uiAmount;
-                    if (balance === 0 || (balance && balance < 0.000001)) {
+                    const mint = accountInfo.mint;
+                    if (
+                        mint === NATIVE_MINT ||
+                        balance === 0 ||
+                        (balance && balance < 0.000001)
+                    ) {
                         accounts.push({
                             pubkey: account.pubkey,
-                            mint: accountInfo.mint,
+                            mint: mint,
                             balance: balance,
                             decimals: accountInfo.tokenAmount.decimals,
                             programId: TOKEN_PROGRAM_ID
@@ -351,10 +357,15 @@
                 for (const account of (token2022Accounts.value || [])) {
                     const accountInfo = account.account.data.parsed.info;
                     const balance = accountInfo.tokenAmount.uiAmount;
-                    if (balance === 0 || (balance && balance < 0.000001)) {
+                    const mint = accountInfo.mint;
+                    if (
+                        mint === NATIVE_MINT ||
+                        balance === 0 ||
+                        (balance && balance < 0.000001)
+                    ) {
                         accounts.push({
                             pubkey: account.pubkey,
-                            mint: accountInfo.mint,
+                            mint: mint,
                             balance: balance,
                             decimals: accountInfo.tokenAmount.decimals,
                             programId: TOKEN_2022_PROGRAM_ID
