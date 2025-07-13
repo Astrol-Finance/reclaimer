@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Account Reclaimer - Close Non-Canonical Accounts</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .header {
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1.1rem;
+        }
+
+        .wallet-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            border: 2px solid #e9ecef;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 10px;
+            font-weight: 600;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #6c757d, #495057);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #dc3545, #c82333);
+        }
+
+        .status {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .account-list {
+            margin: 20px 0;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            padding: 10px;
+        }
+
+        .account-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            margin: 5px 0;
+            background: #f8f9fa;
+            border-radius: 5px;
+            border: 1px solid #e9ecef;
+        }
+
+        .account-address {
+            font-family: monospace;
+            font-size: 0.9rem;
+            color: #495057;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background: #e9ecef;
+            border-radius: 5px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div style="display: flex; justify-content: center; margin-bottom: 20px;">
+            <svg width="155" height="64" viewBox="0 0 155 66" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M25.8095 3.96839C27.7696 2.91266 30.1361 2.94072 32.0889 4.0392L43.1847 10.2806L52.3349 15.836C54.3001 17.0292 55.5 19.1615 55.5 21.4605V44.9175C55.5 47.2788 54.2348 49.459 52.1846 50.6306L43.2287 55.7482L32.0746 61.6738C30.1444 62.6993 27.8308 62.6993 25.9006 61.6738L14.7786 55.7653L5.10995 49.764C3.17618 48.5638 2 46.4494 2 44.1734V21.3598C2 19.1001 3.15519 17.0092 5.06087 15.8291C7.92734 14.054 11.6945 11.7548 14.2863 10.2969C18.4539 7.95261 22.7684 5.60634 25.8095 3.96839Z" stroke="url(#paint0_linear_280_826)" stroke-width="4"></path><path d="M91.45 36.1453L88.986 29.4113C88.8647 29.1126 88.7387 28.758 88.608 28.3473C88.4773 27.9366 88.3467 27.4933 88.216 27.0173C88.0947 27.4933 87.9687 27.9413 87.838 28.3613C87.7073 28.772 87.5813 29.1313 87.46 29.4393L85.01 36.1453H91.45ZM98.1 43.7893H95.188C94.8613 43.7893 94.5953 43.71 94.39 43.5513C94.1847 43.3833 94.0307 43.178 93.928 42.9353L92.416 38.8053H84.03L82.518 42.9353C82.4433 43.15 82.2987 43.346 82.084 43.5233C81.8693 43.7006 81.6033 43.7893 81.286 43.7893H78.346L86.312 23.5453H90.148L98.1 43.7893ZM108.413 32.2253C108.32 32.3746 108.222 32.482 108.119 32.5473C108.017 32.6033 107.886 32.6313 107.727 32.6313C107.559 32.6313 107.377 32.5846 107.181 32.4913C106.995 32.398 106.775 32.2953 106.523 32.1833C106.271 32.062 105.982 31.9546 105.655 31.8613C105.338 31.768 104.96 31.7213 104.521 31.7213C103.84 31.7213 103.303 31.866 102.911 32.1553C102.529 32.4446 102.337 32.8226 102.337 33.2893C102.337 33.5973 102.435 33.8586 102.631 34.0733C102.837 34.2786 103.103 34.4606 103.429 34.6193C103.765 34.778 104.143 34.9226 104.563 35.0533C104.983 35.1746 105.408 35.31 105.837 35.4593C106.276 35.6086 106.705 35.7813 107.125 35.9773C107.545 36.164 107.919 36.4066 108.245 36.7053C108.581 36.9946 108.847 37.3446 109.043 37.7553C109.249 38.166 109.351 38.6606 109.351 39.2393C109.351 39.93 109.225 40.5693 108.973 41.1573C108.731 41.736 108.367 42.24 107.881 42.6693C107.396 43.0893 106.794 43.4206 106.075 43.6633C105.366 43.8966 104.545 44.0133 103.611 44.0133C103.117 44.0133 102.631 43.9666 102.155 43.8733C101.689 43.7893 101.236 43.668 100.797 43.5093C100.368 43.3506 99.9667 43.164 99.5934 42.9493C99.2294 42.7346 98.9074 42.5013 98.6274 42.2493L99.4254 40.9333C99.5281 40.7746 99.6494 40.6533 99.7894 40.5693C99.9294 40.4853 100.107 40.4433 100.321 40.4433C100.536 40.4433 100.737 40.504 100.923 40.6253C101.119 40.7466 101.343 40.8773 101.595 41.0173C101.847 41.1573 102.141 41.288 102.477 41.4093C102.823 41.5306 103.257 41.5913 103.779 41.5913C104.19 41.5913 104.54 41.5446 104.829 41.4513C105.128 41.3486 105.371 41.218 105.557 41.0593C105.753 40.9006 105.893 40.7186 105.977 40.5133C106.071 40.2986 106.117 40.0793 106.117 39.8553C106.117 39.5193 106.015 39.244 105.809 39.0293C105.613 38.8146 105.347 38.628 105.011 38.4693C104.685 38.3106 104.307 38.1706 103.877 38.0493C103.457 37.9186 103.023 37.7786 102.575 37.6293C102.137 37.48 101.703 37.3073 101.273 37.1113C100.853 36.906 100.475 36.6493 100.139 36.3413C99.8127 36.0333 99.5467 35.6553 99.3414 35.2073C99.1454 34.7593 99.0474 34.218 99.0474 33.5833C99.0474 32.9953 99.1641 32.4353 99.3974 31.9033C99.6307 31.3713 99.9714 30.9093 100.419 30.5173C100.877 30.116 101.441 29.7986 102.113 29.5653C102.795 29.3226 103.579 29.2013 104.465 29.2013C105.455 29.2013 106.355 29.3646 107.167 29.6913C107.979 30.018 108.656 30.4473 109.197 30.9793L108.413 32.2253ZM116.742 44.0133C115.491 44.0133 114.53 43.6633 113.858 42.9633C113.195 42.254 112.864 41.2786 112.864 40.0373V32.0153H111.394C111.207 32.0153 111.049 31.9546 110.918 31.8333C110.787 31.712 110.722 31.53 110.722 31.2873V29.9153L113.032 29.5373L113.76 25.6173C113.807 25.4306 113.895 25.286 114.026 25.1833C114.157 25.0806 114.325 25.0293 114.53 25.0293H116.322V29.5513H120.158V32.0153H116.322V39.7993C116.322 40.2473 116.429 40.5973 116.644 40.8493C116.868 41.1013 117.171 41.2273 117.554 41.2273C117.769 41.2273 117.946 41.204 118.086 41.1573C118.235 41.1013 118.361 41.0453 118.464 40.9893C118.576 40.9333 118.674 40.882 118.758 40.8353C118.842 40.7793 118.926 40.7513 119.01 40.7513C119.113 40.7513 119.197 40.7793 119.262 40.8353C119.327 40.882 119.397 40.9566 119.472 41.0593L120.508 42.7393C120.004 43.1593 119.425 43.4766 118.772 43.6913C118.119 43.906 117.442 44.0133 116.742 44.0133ZM125.634 31.9173C126.082 31.0586 126.614 30.3866 127.23 29.9013C127.846 29.4066 128.574 29.1593 129.414 29.1593C130.077 29.1593 130.609 29.304 131.01 29.5933L130.786 32.1833C130.739 32.3513 130.669 32.4726 130.576 32.5473C130.492 32.6126 130.375 32.6453 130.226 32.6453C130.086 32.6453 129.876 32.622 129.596 32.5753C129.325 32.5286 129.059 32.5053 128.798 32.5053C128.415 32.5053 128.075 32.5613 127.776 32.6733C127.477 32.7853 127.207 32.9486 126.964 33.1633C126.731 33.3686 126.521 33.6206 126.334 33.9193C126.157 34.218 125.989 34.5586 125.83 34.9413V43.7893H122.372V29.4253H124.402C124.757 29.4253 125.004 29.4906 125.144 29.6213C125.284 29.7426 125.377 29.9666 125.424 30.2933L125.634 31.9173ZM138.763 29.2013C139.827 29.2013 140.793 29.374 141.661 29.7193C142.539 30.0646 143.285 30.5546 143.901 31.1893C144.527 31.824 145.007 32.5986 145.343 33.5133C145.679 34.428 145.847 35.45 145.847 36.5793C145.847 37.718 145.679 38.7446 145.343 39.6593C145.007 40.574 144.527 41.3533 143.901 41.9973C143.285 42.6413 142.539 43.136 141.661 43.4813C140.793 43.8266 139.827 43.9993 138.763 43.9993C137.69 43.9993 136.715 43.8266 135.837 43.4813C134.96 43.136 134.209 42.6413 133.583 41.9973C132.967 41.3533 132.487 40.574 132.141 39.6593C131.805 38.7446 131.637 37.718 131.637 36.5793C131.637 35.45 131.805 34.428 132.141 33.5133C132.487 32.5986 132.967 31.824 133.583 31.1893C134.209 30.5546 134.96 30.0646 135.837 29.7193C136.715 29.374 137.69 29.2013 138.763 29.2013ZM138.763 41.3393C139.958 41.3393 140.84 40.938 141.409 40.1353C141.988 39.3326 142.277 38.1566 142.277 36.6073C142.277 35.058 141.988 33.8773 141.409 33.0653C140.84 32.2533 139.958 31.8473 138.763 31.8473C137.55 31.8473 136.649 32.258 136.061 33.0793C135.483 33.8913 135.193 35.0673 135.193 36.6073C135.193 38.1473 135.483 39.3233 136.061 40.1353C136.649 40.938 137.55 41.3393 138.763 41.3393ZM151.985 22.9853V43.7893H148.527V22.9853H151.985Z" fill="url(#paint1_linear_280_826)"></path><path d="M39.5397 27.9142C39.3946 27.914 39.2522 27.8746 39.1277 27.8003L29.7041 22.1934C29.4545 22.0446 29.1693 21.9661 28.8785 21.9661C28.5877 21.9661 28.3024 22.0446 28.0529 22.1934L18.8417 27.6768C18.7194 27.7471 18.5806 27.7842 18.4394 27.7842C18.2981 27.7842 18.1594 27.7471 18.0369 27.6768L7.48517 21.68C7.38681 21.6271 7.29992 21.5554 7.22943 21.469C7.15904 21.3825 7.10642 21.283 7.07477 21.1762C7.02904 21.0057 7.04108 20.825 7.10885 20.662C7.17662 20.499 7.29652 20.3629 7.44973 20.2746L28.629 8.08212C28.7513 8.01167 28.8902 7.97461 29.0314 7.97461C29.1727 7.97461 29.3114 8.01167 29.4337 8.08212L50.5953 20.2602C50.7173 20.3306 50.8184 20.4319 50.8888 20.5536C50.9592 20.6754 50.9962 20.8134 50.9962 20.954C50.9962 21.0946 50.9592 21.2326 50.8888 21.3544C50.8184 21.4762 50.7173 21.5774 50.5953 21.6478L39.9421 27.8083C39.8196 27.8782 39.6808 27.9146 39.5397 27.9142Z" fill="url(#paint2_linear_280_826)"></path><path d="M39.7168 52.3234C39.5756 52.323 39.4368 52.286 39.3144 52.216C39.1921 52.1455 39.0904 52.0443 39.0199 51.9224C38.9492 51.8005 38.912 51.6622 38.912 51.5214V40.8095L29.5883 46.2353C29.4651 46.3068 29.3252 46.3444 29.1827 46.3443H29.0941C28.8807 46.3443 28.6761 46.2598 28.5251 46.1094C28.3742 45.959 28.2894 45.7549 28.2894 45.5422L28.3715 33.0705C28.3724 32.9305 28.4099 32.7932 28.4805 32.6722C28.5511 32.5512 28.6523 32.4506 28.7738 32.3807L49.8581 20.2267C49.9795 20.1577 50.1168 20.1215 50.2565 20.1215C50.3962 20.1215 50.5335 20.1577 50.6548 20.2267L50.7289 20.2684C50.8534 20.3382 50.9571 20.4397 51.0292 20.5626C51.1013 20.6856 51.1393 20.8254 51.1393 20.9678V45.401C51.1393 45.5418 51.1021 45.6802 51.0314 45.8021C50.9609 45.924 50.8592 46.0253 50.7369 46.0956L40.1143 52.2128C39.9936 52.2831 39.8566 52.3212 39.7168 52.3234Z" fill="url(#paint3_linear_280_826)"></path><path d="M50.3394 20.963V45.4042L39.7168 51.5213V39.4122L29.1827 45.5421H29.0942V45.5406L29.1762 33.0753L50.2654 20.9213L50.3394 20.963Z" fill="url(#paint4_linear_280_826)"></path><path d="M18.4715 52.3441C18.3303 52.3437 18.1917 52.3067 18.0692 52.2366L7.44652 46.1244C7.32419 46.0539 7.22264 45.9527 7.15196 45.8308C7.08137 45.7088 7.04419 45.5705 7.04419 45.4297V20.9885C7.04419 20.8471 7.08176 20.7083 7.15293 20.586C7.22419 20.4637 7.32662 20.3624 7.44973 20.2922L7.50604 20.2602C7.62837 20.1898 7.76721 20.1527 7.90847 20.1527C8.04973 20.1527 8.18847 20.1898 8.3108 20.2602L29.6606 32.4207C29.7845 32.4911 29.8874 32.5932 29.9587 32.7164C30.03 32.8396 30.0671 32.9795 30.0663 33.1217L29.9841 45.5789C29.9833 45.7198 29.9451 45.8579 29.8737 45.9793C29.8022 46.1009 29.7 46.2014 29.5771 46.2711C29.4542 46.3407 29.3152 46.3768 29.1739 46.3758C29.0327 46.3748 28.8941 46.3368 28.7722 46.2656L19.2763 40.7195V51.542C19.2763 51.6828 19.2391 51.8212 19.1684 51.9431C19.0978 52.065 18.9963 52.1663 18.8739 52.2366C18.7514 52.3067 18.6128 52.3437 18.4715 52.3441Z" fill="url(#paint5_linear_280_826)"></path><path d="M29.2552 33.1169L29.1731 45.5742L18.4716 39.3191V51.5421L7.84906 45.4298V20.9886L7.90537 20.9565L29.2552 33.1169Z" fill="url(#paint6_linear_280_826)"></path><defs><linearGradient id="paint0_linear_280_826" x1="49" y1="-5.5" x2="11.5" y2="66" gradientUnits="userSpaceOnUse"><stop offset="0.0242957" stop-color="#F8F7F5"></stop><stop offset="0.343444" stop-color="#A5A4A4"></stop><stop offset="0.505" stop-color="#959593"></stop><stop offset="0.8" stop-color="#7F7F7F"></stop><stop offset="1" stop-color="#3A3A3A"></stop></linearGradient><linearGradient id="paint1_linear_280_826" x1="73" y1="60.5" x2="172" y2="16" gradientUnits="userSpaceOnUse"><stop stop-color="#646464"></stop><stop offset="1" stop-color="#CDCCCB"></stop></linearGradient><linearGradient id="paint2_linear_280_826" x1="59.1916" y1="62.8567" x2="-0.810254" y2="3.3271" gradientUnits="userSpaceOnUse"><stop stop-color="#1B4DFF"></stop><stop offset="0.925" stop-color="#79DFFF"></stop></linearGradient><linearGradient id="paint3_linear_280_826" x1="59.1916" y1="62.8567" x2="-0.810254" y2="3.3271" gradientUnits="userSpaceOnUse"><stop stop-color="#1B4DFF"></stop><stop offset="0.925" stop-color="#79DFFF"></stop></linearGradient><linearGradient id="paint4_linear_280_826" x1="59.1916" y1="62.8567" x2="-0.810254" y2="3.3271" gradientUnits="userSpaceOnUse"><stop stop-color="#1B4DFF"></stop><stop offset="0.925" stop-color="#79DFFF"></stop></linearGradient><linearGradient id="paint5_linear_280_826" x1="59.1916" y1="62.8567" x2="-0.810254" y2="3.3271" gradientUnits="userSpaceOnUse"><stop stop-color="#1B4DFF"></stop><stop offset="0.925" stop-color="#79DFFF"></stop></linearGradient><linearGradient id="paint6_linear_280_826" x1="59.1916" y1="62.8567" x2="-0.810254" y2="3.3271" gradientUnits="userSpaceOnUse"><stop stop-color="#1B4DFF"></stop><stop offset="0.925" stop-color="#79DFFF"></stop></linearGradient></defs></svg>
+        </div>
+        <div class="header">
+            <h1>Account Reclaimer</h1>
+            <p>Close your non-canonical accounts and recover your tokens</p>
+        </div>
+
+        <div class="wallet-section">
+            <h3>Wallet Connection</h3>
+            <button id="connectBtn" class="btn">Connect Backpack Wallet</button>
+            <div id="walletStatus" class="status info hidden">
+                <span id="walletAddress"></span>
+            </div>
+        </div>
+
+        <div id="mainContent" class="hidden">
+            <div class="wallet-section">
+                <h3>Account Discovery</h3>
+                <button id="scanBtn" class="btn">Scan for Non-Canonical Accounts</button>
+                <div id="scanStatus" class="status info hidden"></div>
+            </div>
+
+            <div id="accountsSection" class="hidden">
+                <div class="wallet-section">
+                    <h3>Non-Canonical Accounts Found</h3>
+                    <div id="accountsList" class="account-list"></div>
+                    <div class="progress-bar">
+                        <div id="progressFill" class="progress-fill"></div>
+                    </div>
+                    <button id="closeAllBtn" class="btn btn-danger">Close All Accounts</button>
+                    <button id="closeSelectedBtn" class="btn btn-secondary">Close Selected</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="statusContainer"></div>
+    </div>
+
+    <!-- SPL Token IIFE bundle -->
+    <script src="https://unpkg.com/@solana/web3.js@1.87.6/lib/index.iife.min.js"></script>
+    <script>
+    function createCloseAccountInstruction(account, destination, authority, programId) {
+        return new solanaWeb3.TransactionInstruction({
+            keys: [
+                { pubkey: new solanaWeb3.PublicKey(account), isSigner: false, isWritable: true },
+                { pubkey: new solanaWeb3.PublicKey(destination), isSigner: false, isWritable: true },
+                { pubkey: new solanaWeb3.PublicKey(authority), isSigner: true, isWritable: false }
+            ],
+            programId: new solanaWeb3.PublicKey(programId),
+            data: Uint8Array.from([9]) // 9 = CloseAccount instruction
+        });
+    }
+        // Configuration
+        const RPC_ENDPOINT = 'https://eclipse.helius-rpc.com';
+        const BACKPACK_WALLET_ADAPTER_URL = 'https://unpkg.com/@solana/wallet-adapter-backpack@0.9.23/lib/index.iife.js';
+        
+        // Global state
+        let wallet = null;
+        let connection = null;
+        let accounts = [];
+        let selectedAccounts = new Set();
+
+        // Token program IDs
+        const TOKEN_PROGRAM_ID = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA';
+        const TOKEN_2022_PROGRAM_ID = 'TokenzQdB6q6r1hB1zjUjLkQ2bYwF4g9F5uQh8eH1J1';
+
+        // Initialize the application
+        async function init() {
+            try {
+                // Load Backpack wallet adapter
+                await loadBackpackWallet();
+                
+                // Initialize Solana connection
+                connection = new solanaWeb3.Connection(RPC_ENDPOINT, 'confirmed');
+                
+                console.log('Application initialized successfully');
+            } catch (error) {
+                showStatus('Failed to initialize application: ' + error.message, 'error');
+            }
+        }
+
+        // Load Backpack wallet adapter
+        async function loadBackpackWallet() {
+            return new Promise((resolve, reject) => {
+                if (window.solanaWeb3) {
+                    resolve();
+                    return;
+                }
+
+                // Load Solana Web3
+                const web3Script = document.createElement('script');
+                web3Script.src = 'https://unpkg.com/@solana/web3.js@1.87.6/lib/index.iife.min.js';
+                web3Script.onload = resolve;
+                web3Script.onerror = reject;
+                document.head.appendChild(web3Script);
+            });
+        }
+
+        // Connect to Backpack wallet using window.backpack
+        async function connectWallet() {
+            try {
+                showStatus('Connecting to Backpack wallet...', 'info');
+                if (!window.backpack) {
+                    showStatus('Backpack wallet not found. Please install it from https://backpack.app', 'error');
+                    return;
+                }
+                await window.backpack.connect();
+                wallet = window.backpack;
+                if (!wallet.publicKey) {
+                    throw new Error('Failed to get wallet public key');
+                }
+                showWalletStatus(wallet.publicKey.toString());
+                showStatus('Wallet connected successfully!', 'success');
+                document.getElementById('mainContent').classList.remove('hidden');
+            } catch (error) {
+                showStatus('Failed to connect wallet: ' + error.message, 'error');
+            }
+        }
+
+        // Show wallet status
+        function showWalletStatus(address) {
+            const statusDiv = document.getElementById('walletStatus');
+            const addressSpan = document.getElementById('walletAddress');
+            addressSpan.textContent = `Connected: ${address.slice(0, 4)}...${address.slice(-4)}`;
+            statusDiv.classList.remove('hidden');
+        }
+
+        // Scan for non-canonical accounts
+        async function scanAccounts() {
+            try {
+                showStatus('Scanning for non-canonical accounts...', 'info');
+                if (!wallet || !wallet.publicKey) {
+                    throw new Error('Wallet not connected');
+                }
+                const publicKey = wallet.publicKey;
+                // Query both SPL and Token-2022 accounts
+                let tokenAccounts = [];
+                let token2022Accounts = [];
+                try {
+                    tokenAccounts = await connection.getParsedTokenAccountsByOwner(publicKey, {
+                        programId: new solanaWeb3.PublicKey(TOKEN_PROGRAM_ID)
+                    });
+                } catch (e) {
+                    // ignore if not supported
+                }
+                try {
+                    token2022Accounts = await connection.getParsedTokenAccountsByOwner(publicKey, {
+                        programId: new solanaWeb3.PublicKey(TOKEN_2022_PROGRAM_ID)
+                    });
+                } catch (e) {
+                    // ignore if not supported
+                }
+                // Filter for non-canonical accounts (accounts with 0 balance or dust)
+                accounts = [];
+                for (const account of (tokenAccounts.value || [])) {
+                    const accountInfo = account.account.data.parsed.info;
+                    const balance = accountInfo.tokenAmount.uiAmount;
+                    if (balance === 0 || (balance && balance < 0.000001)) {
+                        accounts.push({
+                            pubkey: account.pubkey,
+                            mint: accountInfo.mint,
+                            balance: balance,
+                            decimals: accountInfo.tokenAmount.decimals,
+                            programId: TOKEN_PROGRAM_ID
+                        });
+                    }
+                }
+                for (const account of (token2022Accounts.value || [])) {
+                    const accountInfo = account.account.data.parsed.info;
+                    const balance = accountInfo.tokenAmount.uiAmount;
+                    if (balance === 0 || (balance && balance < 0.000001)) {
+                        accounts.push({
+                            pubkey: account.pubkey,
+                            mint: accountInfo.mint,
+                            balance: balance,
+                            decimals: accountInfo.tokenAmount.decimals,
+                            programId: TOKEN_2022_PROGRAM_ID
+                        });
+                    }
+                }
+                displayAccounts();
+                showStatus(`Found ${accounts.length} non-canonical accounts`, 'success');
+            } catch (error) {
+                showStatus('Failed to scan accounts: ' + error.message, 'error');
+            }
+        }
+
+        // Display accounts in the UI
+        function displayAccounts() {
+            const accountsList = document.getElementById('accountsList');
+            accountsList.innerHTML = '';
+            if (accounts.length === 0) {
+                accountsList.innerHTML = '<p>No non-canonical accounts found</p>';
+                return;
+            }
+            accounts.forEach((account, index) => {
+                const accountDiv = document.createElement('div');
+                accountDiv.className = 'account-item';
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.checked = true;
+                checkbox.onchange = (e) => {
+                    if (e.target.checked) {
+                        selectedAccounts.add(index);
+                    } else {
+                        selectedAccounts.delete(index);
+                    }
+                };
+                selectedAccounts.add(index);
+                const addressSpan = document.createElement('span');
+                addressSpan.className = 'account-address';
+                addressSpan.textContent = account.pubkey.toString();
+                const balanceSpan = document.createElement('span');
+                balanceSpan.textContent = `Balance: ${account.balance || 0}`;
+                accountDiv.appendChild(checkbox);
+                accountDiv.appendChild(addressSpan);
+                accountDiv.appendChild(balanceSpan);
+                accountsList.appendChild(accountDiv);
+            });
+            document.getElementById('accountsSection').classList.remove('hidden');
+        }
+
+        // Close all accounts
+        async function closeAllAccounts() {
+            try {
+                if (!wallet || !wallet.publicKey) {
+                    throw new Error('Wallet not connected');
+                }
+                if (accounts.length === 0) {
+                    showStatus('No accounts to close', 'info');
+                    return;
+                }
+                showStatus('Building transaction to close accounts...', 'info');
+                const transaction = new solanaWeb3.Transaction();
+                const walletPublicKey = wallet.publicKey;
+                for (const account of accounts) {
+                    const closeInstruction = createCloseAccountInstruction(
+                        account.pubkey,
+                        walletPublicKey,
+                        walletPublicKey,
+                        account.programId
+                    );
+                    transaction.add(closeInstruction);
+                }
+                const { blockhash } = await connection.getLatestBlockhash();
+                transaction.recentBlockhash = blockhash;
+                transaction.feePayer = walletPublicKey;
+                showStatus('Transaction built. Please sign with your wallet...', 'info');
+                const signedTx = await wallet.signTransaction(transaction);
+                const signature = await connection.sendRawTransaction(signedTx.serialize());
+                showStatus(`Transaction sent! Signature: ${signature}`, 'success');
+                const confirmation = await connection.confirmTransaction(signature);
+                if (confirmation.value.err) {
+                    throw new Error('Transaction failed');
+                }
+                showStatus('All accounts closed successfully!', 'success');
+                setTimeout(scanAccounts, 2000);
+            } catch (error) {
+                showStatus('Failed to close accounts: ' + error.message, 'error');
+            }
+        }
+
+        // Close selected accounts
+        async function closeSelectedAccounts() {
+            try {
+                if (!wallet || !wallet.publicKey) {
+                    throw new Error('Wallet not connected');
+                }
+                if (selectedAccounts.size === 0) {
+                    showStatus('No accounts selected', 'info');
+                    return;
+                }
+                showStatus('Building transaction to close selected accounts...', 'info');
+                const transaction = new solanaWeb3.Transaction();
+                const walletPublicKey = wallet.publicKey;
+                for (const index of selectedAccounts) {
+                    const account = accounts[index];
+                    const closeInstruction = createCloseAccountInstruction(
+                        account.pubkey,
+                        walletPublicKey,
+                        walletPublicKey,
+                        account.programId
+                    );
+                    transaction.add(closeInstruction);
+                }
+                const { blockhash } = await connection.getLatestBlockhash();
+                transaction.recentBlockhash = blockhash;
+                transaction.feePayer = walletPublicKey;
+                showStatus('Transaction built. Please sign with your wallet...', 'info');
+                const signedTx = await wallet.signTransaction(transaction);
+                const signature = await connection.sendRawTransaction(signedTx.serialize());
+                showStatus(`Transaction sent! Signature: ${signature}`, 'success');
+                const confirmation = await connection.confirmTransaction(signature);
+                if (confirmation.value.err) {
+                    throw new Error('Transaction failed');
+                }
+                showStatus('Selected accounts closed successfully!', 'success');
+                setTimeout(scanAccounts, 2000);
+            } catch (error) {
+                showStatus('Failed to close selected accounts: ' + error.message, 'error');
+            }
+        }
+
+        // Show status message
+        function showStatus(message, type = 'info') {
+            const container = document.getElementById('statusContainer');
+            const statusDiv = document.createElement('div');
+            statusDiv.className = `status ${type}`;
+            statusDiv.textContent = message;
+            container.appendChild(statusDiv);
+            
+            // Remove status after 5 seconds
+            setTimeout(() => {
+                if (statusDiv.parentNode) {
+                    statusDiv.parentNode.removeChild(statusDiv);
+                }
+            }, 5000);
+        }
+
+        // Event listeners
+        document.getElementById('connectBtn').addEventListener('click', connectWallet);
+        document.getElementById('scanBtn').addEventListener('click', scanAccounts);
+        document.getElementById('closeAllBtn').addEventListener('click', closeAllAccounts);
+        document.getElementById('closeSelectedBtn').addEventListener('click', closeSelectedAccounts);
+
+        // Initialize when page loads
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html> 
