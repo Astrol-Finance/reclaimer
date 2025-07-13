@@ -414,6 +414,40 @@
             document.getElementById('accountsSection').classList.remove('hidden');
         }
 
+        // Helper: find associated token address (ATA) for a given mint and owner
+        async function findAssociatedTokenAddress(owner, mint, programId) {
+            const [ata] = await solanaWeb3.PublicKey.findProgramAddress(
+                [
+                    owner.toBuffer(),
+                    (programId === TOKEN_2022_PROGRAM_ID
+                        ? new solanaWeb3.PublicKey('ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL').toBuffer() // Token-2022 ATA program
+                        : new solanaWeb3.PublicKey('ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL').toBuffer()),
+                    new solanaWeb3.PublicKey(mint).toBuffer()
+                ],
+                (programId === TOKEN_2022_PROGRAM_ID
+                    ? new solanaWeb3.PublicKey('ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL')
+                    : new solanaWeb3.PublicKey('ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL'))
+            );
+            return ata;
+        }
+
+        // Helper: create transfer instruction
+        function createTransferInstruction(source, destination, authority, amount, decimals, programId) {
+            const data = Buffer.alloc(9);
+            data[0] = 12; // TransferChecked instruction
+            data.writeUIntLE(amount, 1, 8); // amount as u64
+            // decimals is passed as a separate param in TransferChecked, but for simplicity, we can use Transfer (index 3) if needed
+            return new solanaWeb3.TransactionInstruction({
+                keys: [
+                    { pubkey: new solanaWeb3.PublicKey(source), isSigner: false, isWritable: true },
+                    { pubkey: new solanaWeb3.PublicKey(destination), isSigner: false, isWritable: true },
+                    { pubkey: new solanaWeb3.PublicKey(authority), isSigner: true, isWritable: false }
+                ],
+                programId: new solanaWeb3.PublicKey(programId),
+                data: Buffer.from([3, ...Buffer.from(Uint8Array.from(new solanaWeb3.BN(amount).toArray('le', 8)))]) // 3 = Transfer
+            });
+        }
+
         // Close all accounts
         async function closeAllAccounts() {
             try {
@@ -428,6 +462,20 @@
                 const transaction = new solanaWeb3.Transaction();
                 const walletPublicKey = wallet.publicKey;
                 for (const account of accounts) {
+                    if (account.mint !== NATIVE_MINT && account.balance > 0) {
+                        // Transfer to canonical ATA first
+                        const ata = await findAssociatedTokenAddress(walletPublicKey, account.mint, account.programId);
+                        const transferIx = createTransferInstruction(
+                            account.pubkey,
+                            ata,
+                            walletPublicKey,
+                            Math.round(account.balance * Math.pow(10, account.decimals)),
+                            account.decimals,
+                            account.programId
+                        );
+                        transaction.add(transferIx);
+                    }
+                    // Then close
                     const closeInstruction = createCloseAccountInstruction(
                         account.pubkey,
                         walletPublicKey,
@@ -469,6 +517,20 @@
                 const walletPublicKey = wallet.publicKey;
                 for (const index of selectedAccounts) {
                     const account = accounts[index];
+                    if (account.mint !== NATIVE_MINT && account.balance > 0) {
+                        // Transfer to canonical ATA first
+                        const ata = await findAssociatedTokenAddress(walletPublicKey, account.mint, account.programId);
+                        const transferIx = createTransferInstruction(
+                            account.pubkey,
+                            ata,
+                            walletPublicKey,
+                            Math.round(account.balance * Math.pow(10, account.decimals)),
+                            account.decimals,
+                            account.programId
+                        );
+                        transaction.add(transferIx);
+                    }
+                    // Then close
                     const closeInstruction = createCloseAccountInstruction(
                         account.pubkey,
                         walletPublicKey,
